@@ -108,6 +108,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     }
 
     private boolean isDelay() {
+        //设为-1时，表示延迟到Spring容器初始化完成时暴露服务
         Integer delay = getDelay();
         ProviderConfig provider = getProvider();
         if (delay == null && provider != null) {
@@ -119,10 +120,13 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @Override
     @SuppressWarnings({"unchecked", "deprecation"})
     public void afterPropertiesSet() throws Exception {
+        //没有配置provider
         if (getProvider() == null) {
+            //获取spring容器中所有ProviderConfig类型的单例对象
             Map<String, ProviderConfig> providerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, false, false);
             if (providerConfigMap != null && providerConfigMap.size() > 0) {
                 Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
+                //如果没有配置protocol，则从provider中获取多个默认配置。为了向后兼容
                 if ((protocolConfigMap == null || protocolConfigMap.size() == 0)
                         && providerConfigMap.size() > 1) { // backward compatibility
                     List<ProviderConfig> providerConfigs = new ArrayList<ProviderConfig>();
@@ -134,9 +138,10 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                     if (!providerConfigs.isEmpty()) {
                         setProviders(providerConfigs);
                     }
-                } else {
+                } else {//获取默认的provider
                     ProviderConfig providerConfig = null;
                     for (ProviderConfig config : providerConfigMap.values()) {
+                        //是否为缺省协议，用于多协议
                         if (config.isDefault() == null || config.isDefault().booleanValue()) {
                             if (providerConfig != null) {
                                 throw new IllegalStateException("Duplicate provider configs: " + providerConfig + " and " + config);
@@ -150,9 +155,11 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
+        //没有配置应用配置信息
         if (getApplication() == null
                 && (getProvider() == null || getProvider().getApplication() == null)) {
             Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
+            //从spring容器中获取一个默认的应用配置信息
             if (applicationConfigMap != null && applicationConfigMap.size() > 0) {
                 ApplicationConfig applicationConfig = null;
                 for (ApplicationConfig config : applicationConfigMap.values()) {
@@ -236,13 +243,16 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
+        //如果没有配置服务路径
         if (getPath() == null || getPath().length() == 0) {
+            //beanName的生成在DubboBeanDefinitionParser#parse的第一步
             if (beanName != null && beanName.length() > 0
                     && getInterface() != null && getInterface().length() > 0
                     && beanName.startsWith(getInterface())) {
                 setPath(beanName);
             }
         }
+        //是否延迟暴露服务
         if (!isDelay()) {
             export();
         }

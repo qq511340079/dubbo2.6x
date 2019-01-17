@@ -80,7 +80,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     private final List<URL> urls = new ArrayList<URL>();
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
-    // interface type
+    // interface type <dubbo:service interface="com.alibaba.dubbo.demo.provider.DemoServiceImpl"/>
     private String interfaceName;
     private Class<?> interfaceClass;
     // reference to interface impl
@@ -193,7 +193,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public synchronized void export() {
+        //获取provider中的默认配置
         if (provider != null) {
+            //如果service没有配置，则获取provider中的默认配置
             if (export == null) {
                 export = provider.getExport();
             }
@@ -201,10 +203,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 delay = provider.getDelay();
             }
         }
+        //如果配置了不暴露的话则直接返回
         if (export != null && !export) {
             return;
         }
-
+        //需要延迟暴露服务
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -212,11 +215,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     doExport();
                 }
             }, delay, TimeUnit.MILLISECONDS);
-        } else {
+        } else {//直接暴露服务
             doExport();
         }
     }
 
+    /**
+     * 暴露服务
+     * */
     protected synchronized void doExport() {
         if (unexported) {
             throw new IllegalStateException("Already unexported!");
@@ -230,6 +236,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
         checkDefault();
         if (provider != null) {
+            //如果没有配置，则从provider中获取配置
             if (application == null) {
                 application = provider.getApplication();
             }
@@ -262,6 +269,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = application.getMonitor();
             }
         }
+        //泛化服务
         if (ref instanceof GenericService) {
             interfaceClass = GenericService.class;
             if (StringUtils.isEmpty(generic)) {
@@ -274,7 +282,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            //校验<dubbo:medhod/>配置的方法是否在接口中
             checkInterfaceAndMethods(interfaceClass, methods);
+            //校验ref属性<dubbo:service ref="xx"/>
             checkRef();
             generic = Boolean.FALSE.toString();
         }
@@ -306,10 +316,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The stub implementation class " + stubClass.getName() + " not implement interface " + interfaceName);
             }
         }
+        //先后兼容
         checkApplication();
         checkRegistry();
         checkProtocol();
         appendProperties(this);
+
         checkStub(interfaceClass);
         checkMock(interfaceClass);
         if (path == null || path.length() == 0) {
@@ -320,6 +332,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
 
+    /**
+     * 校验ref引用不能为null且是interfaceClass的实现类
+     * <dubbo:service ref="xxx"/>
+     * */
     private void checkRef() {
         // reference should not be null, and is the implementation of the given interface
         if (ref == null) {
@@ -698,13 +714,18 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return port;
     }
 
+    /**
+     * 如果没有默认的provider则从系统配置中生成一个，不常用，可以忽略。
+     * */
     private void checkDefault() {
         if (provider == null) {
             provider = new ProviderConfig();
         }
         appendProperties(provider);
     }
-
+    /**
+     * 向后兼容，从系统中获取配置
+     * */
     private void checkProtocol() {
         if ((protocols == null || protocols.isEmpty())
                 && provider != null) {
