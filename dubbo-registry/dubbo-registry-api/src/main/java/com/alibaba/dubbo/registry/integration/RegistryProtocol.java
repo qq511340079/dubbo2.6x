@@ -240,7 +240,7 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get the address of the providerUrl through the url of the invoker
-     *
+     * 通过调用者的url获取providerUrl的地址
      * @param origininvoker
      * @return
      */
