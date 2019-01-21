@@ -1209,6 +1209,9 @@ public final class URL implements Serializable {
         return new InetSocketAddress(host, port);
     }
 
+    /**
+     * 获取serviceKey，分组/interface：版本
+     * */
     public String getServiceKey() {
         String inf = getServiceInterface();
         if (inf == null) return null;
