@@ -66,7 +66,9 @@ public class Exchangers {
         if (handler == null) {
             throw new IllegalArgumentException("handler == null");
         }
+        //如果不存在编解码器参数则添加
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        //获取Exchanger，默认为HeaderExchanger，紧接着调用bind方法
         return getExchanger(url).bind(url, handler);
     }
 
@@ -109,12 +111,17 @@ public class Exchangers {
         return getExchanger(url).connect(url, handler);
     }
 
+    /**
+     * 获取Exchanger
+     * */
     public static Exchanger getExchanger(URL url) {
+        //获取url中的exchanger参数，默认为header
         String type = url.getParameter(Constants.EXCHANGER_KEY, Constants.DEFAULT_EXCHANGER);
         return getExchanger(type);
     }
 
     public static Exchanger getExchanger(String type) {
+        //通过SPI获取Exchanger的扩展
         return ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension(type);
     }
 

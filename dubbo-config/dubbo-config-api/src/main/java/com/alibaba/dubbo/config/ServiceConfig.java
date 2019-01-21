@@ -509,14 +509,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                     .getExtension(url.getProtocol()).getConfigurator(url).configure(url);
         }
-        //将服务暴露到哪里，为null的话则本地和远程都暴露
+        //将服务暴露到哪里，scope为null的话则本地和远程都暴露
         String scope = url.getParameter(Constants.SCOPE_KEY);
         // don't export when none is configured
         //scope == none则不导出服务
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
-            //如果配scope != remote，则仅仅暴露服务到本地
+            //如果配scope != remote，则导出服务到本地
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
@@ -548,7 +548,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         //生成invoker。registryURL.addParameterAndEncoded方法，把服务提供者的配置信息字符串放到了registryURL的parameter中，后面暴露服务到本地时会用到
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
-                        //通过自适应拓展实例，调用具体protocol拓展实例的export，此处调用的是RegistryProtocol.export
+                        //通过自适应拓展实例，调用具体protocol拓展实例的export，此处调用的是RegistryProtocol.export方法
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
@@ -569,7 +569,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
-        //如果URL的协议头==injvm，说明已经导出到本地了，无需再次导出
+        //如果URL的协议头==injvm，说明会在另一个分支中导出到本地(!Constants.SCOPE_LOCAL.toString().equalsIgnoreCase(scope)分支)，此处无需再次导出
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
             URL local = URL.valueOf(url.toFullString())
                     .setProtocol(Constants.LOCAL_PROTOCOL)

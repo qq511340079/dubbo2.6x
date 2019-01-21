@@ -129,6 +129,7 @@ public class RegistryProtocol implements Protocol {
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
         //export invoker
+        // 导出服务（服务被封装成了invoker）
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
 
         URL registryUrl = getRegistryUrl(originInvoker);
@@ -159,16 +160,19 @@ public class RegistryProtocol implements Protocol {
 
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
-        //以服务提供者配置信息作为key
+        //获取缓存key（以服务提供者配置信息作为key）
         String key = getCacheKey(originInvoker);
-        //从缓存中获取
+        //从缓存中获取，double check，如果不存在则创建一个ExporterChangeableWrapper
         ExporterChangeableWrapper<T> exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
         if (exporter == null) {
             synchronized (bounds) {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
+                    //创建Invoker为委托类对象
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
+                    //此处根据invokerDelegete对象中的url字段的协议头进行自适应方法调用，假如服务配置的是使用dubbo协议，则调用的是DubboProtocol.export方法
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
+                    //写缓存
                     bounds.put(key, exporter);
                 }
             }
