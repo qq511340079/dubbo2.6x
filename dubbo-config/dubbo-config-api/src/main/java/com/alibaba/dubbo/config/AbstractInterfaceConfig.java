@@ -165,7 +165,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     }
 
     /**
-     * 获取注册中心URL，dubbo采用URL作为配置信息的统一格式，所有扩展点都通过传递 URL 携带配置信息
+     * 解析注册中心配置。dubbo采用URL作为配置信息的统一格式，所有扩展点都通过传递 URL 携带配置信息
      * @param provider true服务提供者，false服务消费者
      * */
     protected List<URL> loadRegistries(boolean provider) {
@@ -273,6 +273,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return null;
     }
 
+    /**
+     * 检验interfaceClass，以及<dubbo:method/>标签配置的方法是否在interfaceClass中声明了
+     * */
     protected void checkInterfaceAndMethods(Class<?> interfaceClass, List<MethodConfig> methods) {
         // interface cannot be null
         if (interfaceClass == null) {

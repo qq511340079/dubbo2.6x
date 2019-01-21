@@ -99,21 +99,26 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        //是否延迟导出 && 是否已导出 && 是否已被取消导出
         if (isDelay() && !isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
             }
+            //导出服务
             export();
         }
     }
 
+    /**
+     * 是否延迟导出服务，这里可以理解为是否延迟到onApplicationEvent事件时再执行导出服务逻辑
+     * */
     private boolean isDelay() {
-        //设为-1时，表示延迟到Spring容器初始化完成时暴露服务
         Integer delay = getDelay();
         ProviderConfig provider = getProvider();
         if (delay == null && provider != null) {
             delay = provider.getDelay();
         }
+        //设为-1或者null时，表示延迟到Spring容器初始化完成时暴露服务
         return supportedApplicationListener && (delay == null || delay == -1);
     }
 
@@ -252,7 +257,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 setPath(beanName);
             }
         }
-        //是否延迟暴露服务
+        //是否延迟导出服务
         if (!isDelay()) {
             export();
         }

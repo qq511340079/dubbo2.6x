@@ -61,6 +61,8 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     // access log
     protected String accesslog;
+
+    //服务提供者的协议配置<dubbo:protocol name"dubbo" port="20800"/>
     protected List<ProtocolConfig> protocols;
     // max allowed execute times
     private Integer executes;

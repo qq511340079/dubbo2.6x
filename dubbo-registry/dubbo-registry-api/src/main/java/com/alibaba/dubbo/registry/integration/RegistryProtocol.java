@@ -159,7 +159,9 @@ public class RegistryProtocol implements Protocol {
 
     @SuppressWarnings("unchecked")
     private <T> ExporterChangeableWrapper<T> doLocalExport(final Invoker<T> originInvoker) {
+        //以服务提供者配置信息作为key
         String key = getCacheKey(originInvoker);
+        //从缓存中获取
         ExporterChangeableWrapper<T> exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
         if (exporter == null) {
             synchronized (bounds) {
@@ -240,11 +242,12 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get the address of the providerUrl through the url of the invoker
-     * 通过调用者的url获取providerUrl的地址
+     * 通过Invoker的url参数获取服务提供者的配置信息
      * @param origininvoker
      * @return
      */
     private URL getProviderUrl(final Invoker<?> origininvoker) {
+        //此处可以看到把在doExportUrlsFor1Protocol方法中放到url中的参数取了出来，就是服务提供者的配置信息
         String export = origininvoker.getUrl().getParameterAndDecoded(Constants.EXPORT_KEY);
         if (export == null || export.length() == 0) {
             throw new IllegalArgumentException("The registry export url is null! registry: " + origininvoker.getUrl());
@@ -261,6 +264,7 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private String getCacheKey(final Invoker<?> originInvoker) {
+        //获取服务提供者的配置信息URL
         URL providerUrl = getProviderUrl(originInvoker);
         String key = providerUrl.removeParameters("dynamic", "enabled").toFullString();
         return key;

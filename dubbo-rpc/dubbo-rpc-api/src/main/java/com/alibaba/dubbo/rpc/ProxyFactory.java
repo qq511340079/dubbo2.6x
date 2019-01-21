@@ -46,6 +46,7 @@ public interface ProxyFactory {
     <T> T getProxy(Invoker<T> invoker, boolean generic) throws RpcException;
 
     /**
+     * 自适应方法，根据url参数中的proxy参数，动态的调用扩展实例的getInvoker方法
      * create invoker.
      *
      * @param <T>
