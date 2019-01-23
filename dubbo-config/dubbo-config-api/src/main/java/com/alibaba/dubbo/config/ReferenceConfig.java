@@ -184,6 +184,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     private void init() {
+        //避免重复初始化
         if (initialized) {
             return;
         }
@@ -192,25 +193,33 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             throw new IllegalStateException("<dubbo:reference interface=\"\" /> interface not allow null!");
         }
         // get consumer's global configuration
+        //检查是否有consumer，如果没有则创建一个并配置
         checkDefault();
+        //添加系统属性中的参数到this
         appendProperties(this);
+        //如果没有泛化接口配置，则尝试从consumer配置中获取
         if (getGeneric() == null && getConsumer() != null) {
             setGeneric(getConsumer().getGeneric());
         }
-        if (ProtocolUtils.isGeneric(getGeneric())) {
+
+        if (ProtocolUtils.isGeneric(getGeneric())) {//泛化接口
             interfaceClass = GenericService.class;
-        } else {
+        } else {//非泛化接口
             try {
+                //获取class
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
                         .getContextClassLoader());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            //校验interfaceClass和methods
             checkInterfaceAndMethods(interfaceClass, methods);
         }
+        //获取url配置信息，有两种方式，1：从系统属性中获取.2：从properties文件中获取
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
         if (resolve == null || resolve.length() == 0) {
+            //加载properties配置文件，加载成功后获取接口的配置信息
             resolveFile = System.getProperty("dubbo.resolve.file");
             if (resolveFile == null || resolveFile.length() == 0) {
                 File userResolveFile = new File(new File(System.getProperty("user.home")), "dubbo-resolve.properties");
@@ -233,10 +242,12 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         logger.warn(e.getMessage(), e);
                     }
                 }
+                //根据interfaceName获取配置信息
                 resolve = properties.getProperty(interfaceName);
             }
         }
-        if (resolve != null && resolve.length() > 0) {
+
+        if (resolve != null && resolve.length() > 0) {//如果获取到配置，则将配置设置到url字段
             url = resolve;
             if (logger.isWarnEnabled()) {
                 if (resolveFile != null) {
@@ -246,6 +257,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
         }
+        // 检查配置，如果没有则尝试从其他配置中获取。
+        // 例如：如果reference没有配置application，<dubbo:consumer/>会作为<dubbo:reference/>的缺省配置，则会尝试从<dubbo:consumer/>中获取缺省配置
         if (consumer != null) {
             if (application == null) {
                 application = consumer.getApplication();
