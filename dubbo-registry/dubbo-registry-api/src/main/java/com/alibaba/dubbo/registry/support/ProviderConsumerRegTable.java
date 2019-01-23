@@ -30,17 +30,26 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2017/11/23
  */
 public class ProviderConsumerRegTable {
+    //serveUniqueName --> Set<ProviderInvokerWrapper>
     public static ConcurrentHashMap<String, Set<ProviderInvokerWrapper>> providerInvokers = new ConcurrentHashMap<String, Set<ProviderInvokerWrapper>>();
     public static ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>> consumerInvokers = new ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>>();
 
+    /**
+     * @param invoker 服务接口的封装
+     * @param registryUrl 注册中心的配置信息
+     * @param providerUrl 服务提供者的配置信息
+     * */
     public static void registerProvider(Invoker invoker, URL registryUrl, URL providerUrl) {
         ProviderInvokerWrapper wrapperInvoker = new ProviderInvokerWrapper(invoker, registryUrl, providerUrl);
+        //获取服务的唯一名称
         String serviceUniqueName = providerUrl.getServiceKey();
+        //根据服务唯一名称获取invokers集合，不存在则创建
         Set<ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);
         if (invokers == null) {
             providerInvokers.putIfAbsent(serviceUniqueName, new ConcurrentHashSet<ProviderInvokerWrapper>());
             invokers = providerInvokers.get(serviceUniqueName);
         }
+        //把wrapperInvoker放入到invokers集合中，可能是缓存服务提供者的多个协议或注册中心的ProviderInvokerWrapper实例
         invokers.add(wrapperInvoker);
     }
 

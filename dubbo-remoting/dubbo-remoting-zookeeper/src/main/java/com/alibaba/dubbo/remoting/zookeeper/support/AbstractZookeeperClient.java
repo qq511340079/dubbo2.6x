@@ -50,14 +50,20 @@ public abstract class AbstractZookeeperClient<TargetChildListener> implements Zo
         return url;
     }
 
+    /**
+     * @param path 路径
+     * @param ephemeral 是否是临时节点
+     * */
     @Override
     public void create(String path, boolean ephemeral) {
+        //不是临时节点且路径已存在则直接返回
         if (!ephemeral) {
             if (checkExists(path)) {
                 return;
             }
         }
         int i = path.lastIndexOf('/');
+        //递归创建上级节点
         if (i > 0) {
             create(path.substring(0, i), false);
         }

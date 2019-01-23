@@ -81,6 +81,7 @@ public class RegistryProtocol implements Protocol {
     }
 
     //Filter the parameters that do not need to be output in url(Starting with .)
+    //过滤url中的参数(以.开头的)，以.开头的参数隐藏的，是不会作为服务接口的参数信息注册到注册中心的
     private static String[] getFilteredKeys(URL url) {
         Map<String, String> params = url.getParameters();
         if (params != null && !params.isEmpty()) {
@@ -122,29 +123,36 @@ public class RegistryProtocol implements Protocol {
     }
 
     public void register(URL registryUrl, URL registedProviderUrl) {
+        //获取扩展点Registry的具体扩展实例，假如是zookeeper的话则扩展实例是com.alibaba.dubbo.registry.zookeeper.ZookeeperRegistry
         Registry registry = registryFactory.getRegistry(registryUrl);
+        //注册到注册中心，调用的是ZookeeperRegistry的父类FailbackRegistry的register方法
         registry.register(registedProviderUrl);
     }
 
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
         //export invoker
-        // 导出服务（服务被封装成了invoker）
+        // 导出(启动)服务（服务被封装成了invoker），完成后仅仅是在本地启动了dubbo服务，但是还没有注册到注册中心
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
         //获取注册中心的配置信息URL
         URL registryUrl = getRegistryUrl(originInvoker);
 
         //registry provider
+        //获取注册中心扩展实例，zookeeper就是ZookeeperRegistry
         final Registry registry = getRegistry(originInvoker);
+        //获取启动的dubbo服务的配置信息，将被注册到注册中心
         final URL registeredProviderUrl = getRegisteredProviderUrl(originInvoker);
 
         //to judge to delay publish whether or not
+        //获取是否注册到注册中心参数，默认为true
         boolean register = registeredProviderUrl.getParameter("register", true);
-
+        //注册服务提供者到缓存
         ProviderConsumerRegTable.registerProvider(originInvoker, registryUrl, registeredProviderUrl);
-
+        //判断是否注册到注册中心
         if (register) {
+            //注册到注册中心
             register(registryUrl, registeredProviderUrl);
+            //设置ProviderInvokerWrapper对象属性为已注册
             ProviderConsumerRegTable.getProviderWrapper(originInvoker).setReg(true);
         }
 
@@ -224,13 +232,15 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Return the url that is registered to the registry and filter the url parameter once
-     *
+     *  返回已经导出的服务的配置信息，并过滤参数后返回
      * @param originInvoker
      * @return
      */
     private URL getRegisteredProviderUrl(final Invoker<?> originInvoker) {
+        //获取已经导出的服务的配置信息
         URL providerUrl = getProviderUrl(originInvoker);
         //The address you see at the registry
+        //过滤掉不需要的注册到注册中心的参数
         return providerUrl.removeParameters(getFilteredKeys(providerUrl))
                 .removeParameter(Constants.MONITOR_KEY)
                 .removeParameter(Constants.BIND_IP_KEY)

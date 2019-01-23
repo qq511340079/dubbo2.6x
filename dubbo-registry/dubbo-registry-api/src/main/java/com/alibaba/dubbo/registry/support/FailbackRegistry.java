@@ -65,11 +65,14 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     public FailbackRegistry(URL url) {
         super(url);
+        //获取重试间隔，默认为5000ms
         this.retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
+        //通过定时任务重试
         this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 // Check and connect to the registry
+                //检查并连接注册重新
                 try {
                     retry();
                 } catch (Throwable t) { // Defensive fault tolerance
@@ -134,11 +137,13 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         failedUnregistered.remove(url);
         try {
             // Sending a registration request to the server side
+            //将服务端注册到注册中心(zookeeper就是在zk中创建对应的路径)，模板方法
             doRegister(url);
         } catch (Exception e) {
             Throwable t = e;
 
             // If the startup detection is opened, the Exception is thrown directly.
+            //如果配置了check为true，则注册失败时抛出异常
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
                     && !Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
@@ -153,6 +158,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            //记录注册失败的url，定时重试用
             failedRegistered.add(url);
         }
     }
