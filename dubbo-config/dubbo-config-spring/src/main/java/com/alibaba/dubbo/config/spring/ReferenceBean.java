@@ -169,7 +169,9 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+        //是否立即初始化服务消费者
         Boolean b = isInit();
+        //如果<dubbo: reference/>中没有配置init，则尝试从<dubbo:consumer/>中获取init配置
         if (b == null && getConsumer() != null) {
             b = getConsumer().isInit();
         }

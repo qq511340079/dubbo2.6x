@@ -36,7 +36,7 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
     // check if service provider exists
     protected Boolean check;
 
-    // whether to eagle-init
+    // whether to eagle-init，true=饿汉式初始化(在afterProperties方法被调用时被初始化)，false=懒汉式初始化(在spring注入改bean的时候再初始化)
     protected Boolean init;
 
     // whether to use generic interface
