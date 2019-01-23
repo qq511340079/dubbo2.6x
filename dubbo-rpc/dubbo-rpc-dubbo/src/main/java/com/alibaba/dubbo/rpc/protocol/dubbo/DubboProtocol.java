@@ -276,7 +276,7 @@ public class DubboProtocol extends AbstractProtocol {
                 //服务器已创建，则根据url中的配置重置服务器。
                 // server supports reset, use together with override
                 server.reset(url);
-                //如上，在同一台机器上（单网卡），同一个端口上仅允许启动一个服务器实例。若某个端口上已有服务器实例，此时则调用 reset 方法重置服务器的一些配置
+                //如上，在同一台机器上（单网卡），同一个端口上仅允许启动一个服务器实例。若某个端口上已有服务器实例，此时则调用reset方法重置服务器的一些配置
             }
         }
     }

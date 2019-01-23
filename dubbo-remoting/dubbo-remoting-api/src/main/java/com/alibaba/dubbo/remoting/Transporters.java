@@ -50,9 +50,11 @@ public class Transporters {
         ChannelHandler handler;
         if (handlers.length == 1) {
             handler = handlers[0];
-        } else {
+        } else { //如果有多个ChannelHandler，则创建ChannelHandler分发器
             handler = new ChannelHandlerDispatcher(handlers);
         }
+        //调用扩展自适应实例的bind方法，根据url中的参数调用具体扩展实例的bind方法，默认是com.alibaba.dubbo.remoting.transport.netty.NettyTransporter
+        //这里只看最新的netty4的实现，com.alibaba.dubbo.remoting.transport.netty4.NettyTransporter
         return getTransporter().bind(url, handler);
     }
 
@@ -76,6 +78,7 @@ public class Transporters {
     }
 
     public static Transporter getTransporter() {
+        //获取Transporter的扩展自适应实例
         return ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
     }
 

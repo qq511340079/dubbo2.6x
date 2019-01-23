@@ -131,7 +131,7 @@ public class RegistryProtocol implements Protocol {
         //export invoker
         // 导出服务（服务被封装成了invoker）
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker);
-
+        //获取注册中心的配置信息URL
         URL registryUrl = getRegistryUrl(originInvoker);
 
         //registry provider
@@ -211,8 +211,11 @@ public class RegistryProtocol implements Protocol {
 
     private URL getRegistryUrl(Invoker<?> originInvoker) {
         URL registryUrl = originInvoker.getUrl();
+        //url的协议头是否是registry，url中的协议头好像代表了当前要做的操作？
         if (Constants.REGISTRY_PROTOCOL.equals(registryUrl.getProtocol())) {
+            //获取注册中心参数，假设我们配置的注册中心是zookeeper，此时的url可能是：zookeeper://127.0.0.1:2180?arg1=XXX&arg2=xxx
             String protocol = registryUrl.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_DIRECTORY);
+            //设置新的协议头并移除参数(其实就是新建一个URL对象)，协议头代表了当前要做的操作，比如registry就是注册到注册中心，dubbo就是启动dubbo服务
             registryUrl = registryUrl.setProtocol(protocol).removeParameter(Constants.REGISTRY_KEY);
         }
         return registryUrl;
