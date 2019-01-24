@@ -63,7 +63,7 @@ public class StaticContext extends ConcurrentHashMap<Object, Object> {
     public static String getKey(Map<String, String> paras, String methodName, String suffix) {
         return getKey(StringUtils.getServiceKey(paras), methodName, suffix);
     }
-
+    // /group/interfaceName:version.methodName.suffix
     private static String getKey(String servicekey, String methodName, String suffix) {
         StringBuffer sb = new StringBuffer().append(servicekey).append(".").append(methodName).append(".").append(suffix);
         return sb.toString();

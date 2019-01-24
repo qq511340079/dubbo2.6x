@@ -340,12 +340,15 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         map.put(method.getName() + ".retries", "0");
                     }
                 }
+                //将MethodConfig中get方法的返回值添加到attributes，简单点理解就是把MethodConfig中的字段添加到attributes
                 appendAttributes(attributes, method, prefix + "." + method.getName());
+                //校验MethodConfig配置的合理性，将onreturn、onthrow、onreturn配置添加到attributes
                 checkAndConvertImplicitConfig(method, map, attributes);
             }
         }
-
+        //从系统运行配置中获取将要被注册到注册中心的消费端ip
         String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);
+        //如果没有获取，则获取本地ip
         if (hostToRegistry == null || hostToRegistry.length() == 0) {
             hostToRegistry = NetUtils.getLocalHost();
         } else if (isInvalidLocalHost(hostToRegistry)) {
@@ -353,8 +356,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         map.put(Constants.REGISTER_IP_KEY, hostToRegistry);
 
-        //attributes are stored by system context.
+        //attributes are stored by system context.存储attributes到系统上下文
         StaticContext.getSystemContext().putAll(attributes);
+        //创建代理类
         ref = createProxy(map);
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
