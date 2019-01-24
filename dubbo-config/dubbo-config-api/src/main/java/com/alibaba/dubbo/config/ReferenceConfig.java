@@ -160,6 +160,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (destroyed) {
             throw new IllegalStateException("Already destroyed!");
         }
+        //ref为null标识还没有初始化，则进行初始化
         if (ref == null) {
             init();
         }
@@ -289,40 +290,49 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 monitor = application.getMonitor();
             }
         }
+        //检查application，没有则创建一个并进行配置
         checkApplication();
         checkStub(interfaceClass);
         checkMock(interfaceClass);
+        //map用于存放参数
         Map<String, String> map = new HashMap<String, String>();
         Map<Object, Object> attributes = new HashMap<Object, Object>();
+        //添加参数信息，side代表是服务端还是消费端
         map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
         map.put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
         map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
         if (ConfigUtils.getPid() > 0) {
             map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
         }
-        if (!isGeneric()) {
+        if (!isGeneric()) {//非泛型接口
             String revision = Version.getVersion(interfaceClass, version);
             if (revision != null && revision.length() > 0) {
                 map.put("revision", revision);
             }
-
+            //获取接口的所有方法名
             String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
                 logger.warn("NO method found in service interface " + interfaceClass.getName());
                 map.put("methods", Constants.ANY_VALUE);
             } else {
+                //将接口的所有方法名用逗号拼接起来添加到map
                 map.put("methods", StringUtils.join(new HashSet<String>(Arrays.asList(methods)), ","));
             }
         }
         map.put(Constants.INTERFACE_KEY, interfaceName);
+        //将配置对象中的字段添加到map中
         appendParameters(map, application);
         appendParameters(map, module);
         appendParameters(map, consumer, Constants.DEFAULT_KEY);
         appendParameters(map, this);
+        //group/interfaceName:version
         String prefix = StringUtils.getServiceKey(map);
+        //遍历<dubbo:method/>配置
         if (methods != null && !methods.isEmpty()) {
             for (MethodConfig method : methods) {
+                //将method的配置添加到map
                 appendParameters(map, method, method.getName());
+                //如果配置了<dubbo:method name="XXX" retry="false"/>，则将XXX.retry参数转换为XXX.retries=0，表示不重试。官方文档中未找到retry配置，可能是为了向后兼容
                 String retryKey = method.getName() + ".retry";
                 if (map.containsKey(retryKey)) {
                     String retryValue = map.remove(retryKey);
