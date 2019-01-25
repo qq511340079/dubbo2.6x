@@ -368,7 +368,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private T createProxy(Map<String, String> map) {
         URL tmpUrl = new URL("temp", "localhost", 0, map);
         final boolean isJvmRefer;
+        //如果没有配置injvm参数，则尝试从其它参数来判断是否是本地引用，injvm参数已经被废弃，官方推荐使用scope参数
         if (isInjvm() == null) {
+            //如果url参数被指定，则不做本地引用
             if (url != null && url.length() > 0) { // if a url is specified, don't do local reference
                 isJvmRefer = false;
             } else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
@@ -381,29 +383,40 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             isJvmRefer = isInjvm().booleanValue();
         }
 
-        if (isJvmRefer) {
+        if (isJvmRefer) {//如果一个本地引用
+            //生成本地引用URL，协议为injvm
             URL url = new URL(Constants.LOCAL_PROTOCOL, NetUtils.LOCALHOST, 0, interfaceClass.getName()).addParameters(map);
+            //调用InjvmProtocol.refer方法获取InjvmInvoker实例
             invoker = refprotocol.refer(interfaceClass, url);
             if (logger.isInfoEnabled()) {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
-        } else {
+        } else {//远程引用
+            //url不为空，可能是点对点或者注册中心的地址
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
+                //;号分割的多个url地址
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
                     for (String u : us) {
                         URL url = URL.valueOf(u);
                         if (url.getPath() == null || url.getPath().length() == 0) {
+                            //设置url路径为接口全限定名
                             url = url.setPath(interfaceName);
                         }
+                        //url的协议为registry，表示是一个和注册中心的url
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+                            //将map转为查询字符串，并作为refer参数的值添加到url中
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
-                        } else {
+                        } else {//点到点的地址
+                            // 合并url，移除服务提供者的一些配置（这些配置来源于用户配置的url属性），
+                            // 比如线程池相关配置。并保留服务提供者的部分配置，比如版本，group，时间戳等
+                            // 最后将合并后的配置设置为url查询字符串中。
                             urls.add(ClusterUtils.mergeUrl(url, map));
                         }
                     }
                 }
             } else { // assemble URL from register center's configuration
+                //获取注册中心地址
                 List<URL> us = loadRegistries(false);
                 if (us != null && !us.isEmpty()) {
                     for (URL u : us) {
@@ -411,6 +424,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         if (monitorUrl != null) {
                             map.put(Constants.MONITOR_KEY, URL.encode(monitorUrl.toFullString()));
                         }
+                        //将map转为查询字符串，并作为refer参数的值添加到url中
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }
@@ -419,27 +433,31 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
-            if (urls.size() == 1) {
+            if (urls.size() == 1) {//单个注册中心或服务提供者(服务直联，下同)
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
-            } else {
+            } else {//多个注册中心或多个服务提供者，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
+                //获取所有invoker
                 for (URL url : urls) {
                     invokers.add(refprotocol.refer(interfaceClass, url));
                     if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                         registryURL = url; // use last registry url
                     }
                 }
+
                 if (registryURL != null) { // registry url is available
                     // use AvailableCluster only when register's cluster is available
+                    //如果注册中心不为null，则将使用AvailableCluster
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME);
+                    //创建StaticDirectory实例，并由Cluster对多个Invoker进行合并
                     invoker = cluster.join(new StaticDirectory(u, invokers));
                 } else { // not a registry url
                     invoker = cluster.join(new StaticDirectory(invokers));
                 }
             }
         }
-
+        //获取check配置，启动时检查提供者是否存在，true报错，false忽略
         Boolean c = check;
         if (c == null && consumer != null) {
             c = consumer.isCheck();
@@ -447,6 +465,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (c == null) {
             c = true; // default true
         }
+        //invoker可用性检查
         if (c && !invoker.isAvailable()) {
             // make it possible for consumer to retry later if provider is temporarily unavailable
             initialized = false;

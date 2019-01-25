@@ -290,7 +290,9 @@ public class RegistryProtocol implements Protocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        //将url中的registry参数设置为协议头，并从参数中移除
         url = url.setProtocol(url.getParameter(Constants.REGISTRY_KEY, Constants.DEFAULT_REGISTRY)).removeParameter(Constants.REGISTRY_KEY);
+        //调用自适应方法getRegistry，假设是注册中心是zookeeper，则获取到的是com.alibaba.dubbo.registry.zookeeper.ZookeeperRegistry
         Registry registry = registryFactory.getRegistry(url);
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
