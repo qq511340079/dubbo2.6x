@@ -276,8 +276,9 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     /**
      * 获取注册到注册中心的路径
-     * 路径格式：/${group}/${serviceInterface}/providers/${url}
-     * 如：/dubbo/org.apache.dubbo.DemoService/providers/dubbo%3A%2F%2F127.0.0.1......
+     * 路径格式：/${group}/${serviceInterface}/${CATEGORY_KEY}/${url}
+     * 如：服务提供者 /dubbo/org.apache.dubbo.DemoService/providers/dubbo%3A%2F%2F127.0.0.1......
+     *  服务消费者 /dubbo/com.alibaba.dubbo.demo.DemoService/consumers/consumer%3A%2F%2F192.168.0.106%2Fcom.alibaba.dubbo.demo.DemoService%3Fapplication%3Ddemo-consumer%26category%3Dconsumers
      * */
     private String toUrlPath(URL url) {
         return toCategoryPath(url) + Constants.PATH_SEPARATOR + URL.encode(url.toFullString());

@@ -74,6 +74,7 @@ public class Transporters {
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
+        //调用自适应方法connect，建立连接
         return getTransporter().connect(url, handler);
     }
 

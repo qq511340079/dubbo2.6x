@@ -137,7 +137,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         failedUnregistered.remove(url);
         try {
             // Sending a registration request to the server side
-            //将服务端注册到注册中心(zookeeper就是在zk中创建对应的路径)，模板方法
+            //将服务端/消费端注册到注册中心(zookeeper就是在zk中创建对应的路径)，模板方法
             doRegister(url);
         } catch (Exception e) {
             Throwable t = e;

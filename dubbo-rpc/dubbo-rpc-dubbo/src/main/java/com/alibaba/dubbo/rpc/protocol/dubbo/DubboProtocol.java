@@ -390,17 +390,20 @@ public class DubboProtocol extends AbstractProtocol {
                 referenceClientMap.remove(key);
             }
         }
-
+        //细粒度的锁，配合ConcurrentHashMap根据key上锁，也是一个锁优化的技巧
         locks.putIfAbsent(key, new Object());
         synchronized (locks.get(key)) {
             if (referenceClientMap.containsKey(key)) {
                 return referenceClientMap.get(key);
             }
-
+            //创建ExchangeClient
             ExchangeClient exchangeClient = initClient(url);
+            //创建带引用计数的client，装饰模式
             client = new ReferenceCountExchangeClient(exchangeClient, ghostClientMap);
+            //写缓存
             referenceClientMap.put(key, client);
             ghostClientMap.remove(key);
+            //防止内存泄漏,从locks中删除
             locks.remove(key);
             return client;
         }
@@ -412,13 +415,16 @@ public class DubboProtocol extends AbstractProtocol {
     private ExchangeClient initClient(URL url) {
 
         // client type setting.
+        //获取通信实现类型，默认为netty
         String str = url.getParameter(Constants.CLIENT_KEY, url.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_CLIENT));
-
+        //添加编解码器参数
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
         // enable heartbeat by default
+        //添加心跳检测参数
         url = url.addParameterIfAbsent(Constants.HEARTBEAT_KEY, String.valueOf(Constants.DEFAULT_HEARTBEAT));
 
         // BIO is not allowed since it has severe performance issue.
+        //判断通信类型是否存在对应的扩展，不允许使用BIO，因为有严重的性能问题
         if (str != null && str.length() > 0 && !ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str)) {
             throw new RpcException("Unsupported client type: " + str + "," +
                     " supported client type is " + StringUtils.join(ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions(), " "));
@@ -426,10 +432,13 @@ public class DubboProtocol extends AbstractProtocol {
 
         ExchangeClient client;
         try {
-            // connection should be lazy
+            // connection should be lazy.延迟链接，该配置只对使用长连接的dubbo协议生效，<dubbo:protocol name="dubbo" lazy="true" />
+            // 延迟连接用于减少长连接数。当有调用发起时，再创建长连接。
             if (url.getParameter(Constants.LAZY_CONNECT_KEY, false)) {
+                //创建延迟链接的ExchangeClient实例
                 client = new LazyConnectExchangeClient(url, requestHandler);
             } else {
+                //建立连接，返回HeaderExchangeClient实例
                 client = Exchangers.connect(url, requestHandler);
             }
         } catch (RemotingException e) {

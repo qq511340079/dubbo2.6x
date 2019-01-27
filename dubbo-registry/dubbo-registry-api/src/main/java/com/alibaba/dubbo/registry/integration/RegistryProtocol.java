@@ -299,6 +299,7 @@ public class RegistryProtocol implements Protocol {
         }
 
         // group="a,b" or group="*"
+        //解析查询参数字符串为map
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(Constants.REFER_KEY));
         String group = qs.get(Constants.GROUP_KEY);
         if (group != null && group.length() > 0) {
@@ -317,12 +318,16 @@ public class RegistryProtocol implements Protocol {
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
+        //protocol是在创建实例的时候由dubbo的SPI机制注入自适应实例
         directory.setProtocol(protocol);
         // all attributes of REFER_KEY
+        //Constants.REFER_KEY的所有参数
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
+        //构建消费端url
         URL subscribeUrl = new URL(Constants.CONSUMER_PROTOCOL, parameters.remove(Constants.REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
                 && url.getParameter(Constants.REGISTER_KEY, true)) {
+            //添加参数后调用FailbackRegistry#register方法，注册消费端信息到zk对应服务提供者的路径下
             registry.register(subscribeUrl.addParameters(Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY,
                     Constants.CHECK_KEY, String.valueOf(false)));
         }

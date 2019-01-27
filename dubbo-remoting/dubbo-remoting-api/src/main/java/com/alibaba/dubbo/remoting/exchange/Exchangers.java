@@ -107,7 +107,9 @@ public class Exchangers {
         if (handler == null) {
             throw new IllegalArgumentException("handler == null");
         }
+        //如果不存在编解码器则添加编解码器
         url = url.addParameterIfAbsent(Constants.CODEC_KEY, "exchange");
+        //默认调用HeaderExchanger#connect方法
         return getExchanger(url).connect(url, handler);
     }
 
