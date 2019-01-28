@@ -116,28 +116,34 @@ public abstract class Wrapper {
 
         String name = c.getName();
         ClassLoader cl = ClassHelper.getClassLoader(c);
-
+        //setPropertyValue方法
         StringBuilder c1 = new StringBuilder("public void setPropertyValue(Object o, String n, Object v){ ");
+        //getPropertyValue方法
         StringBuilder c2 = new StringBuilder("public Object getPropertyValue(Object o, String n){ ");
+        //invokeMethod方法
         StringBuilder c3 = new StringBuilder("public Object invokeMethod(Object o, String n, Class[] p, Object[] v) throws " + InvocationTargetException.class.getName() + "{ ");
-
+        //生成方法体中的代码，类全限定名 w try{ w = ((类全限定名)o)}catch(Throwable e){ throw new IllegalArgumentException(e); }
         c1.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c2.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c3.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
+        // <property name, property types>
+        Map<String, Class<?>> pts = new HashMap<String, Class<?>>();
+        // <method desc, Method instance>
+        Map<String, Method> ms = new LinkedHashMap<String, Method>();
+        // method names.
+        List<String> mns = new ArrayList<String>();
+        // declaring method names.不是从父类继承的方法的list
+        List<String> dmns = new ArrayList<String>();
 
-        Map<String, Class<?>> pts = new HashMap<String, Class<?>>(); // <property name, property types>
-        Map<String, Method> ms = new LinkedHashMap<String, Method>(); // <method desc, Method instance>
-        List<String> mns = new ArrayList<String>(); // method names.
-        List<String> dmns = new ArrayList<String>(); // declaring method names.
-
-        // get all public field.
+        //为没有transient修饰的public字段生成代码
         for (Field f : c.getFields()) {
             String fn = f.getName();
             Class<?> ft = f.getType();
             if (Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers()))
                 continue;
-
+            //if( $2.equals("a") ){ w.a=((Number)$3).intValue(); return; }
             c1.append(" if( $2.equals(\"").append(fn).append("\") ){ w.").append(fn).append("=").append(arg(ft, "$3")).append("; return; }");
+            //if( $2.equals("a") ){ return ($w)w.a; }
             c2.append(" if( $2.equals(\"").append(fn).append("\") ){ return ($w)w.").append(fn).append("; }");
             pts.put(fn, ft);
         }
@@ -149,7 +155,8 @@ public abstract class Wrapper {
             c3.append(" try{");
         }
         for (Method m : methods) {
-            if (m.getDeclaringClass() == Object.class) //ignore Object's method.
+            //忽略Object的方法
+            if (m.getDeclaringClass() == Object.class)
                 continue;
 
             String mn = m.getName();

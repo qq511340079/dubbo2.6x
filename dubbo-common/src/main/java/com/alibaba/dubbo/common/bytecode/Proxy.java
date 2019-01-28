@@ -170,8 +170,10 @@ public abstract class Proxy {
                 for (Method method : ics[i].getMethods()) {
                     //获取方法描述，可以理解为方法签名
                     String desc = ReflectUtils.getDesc(method);
+                    //如果存在相同的方法签名则跳过，用于多个接口有相同的方法的情况
                     if (worked.contains(desc))
                         continue;
+                    //将方法签名放到集合中
                     worked.add(desc);
 
                     int ix = methods.size();
