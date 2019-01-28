@@ -29,9 +29,14 @@ import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
  */
 public class JavassistProxyFactory extends AbstractProxyFactory {
 
+    /**
+     * 获取服务接口的代理对象
+     * */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
+        //Proxy#getProxy方法返回生成的抽象类com.alibaba.dubbo.common.bytecode.Proxy的子类
+        //调用生成的proxy的子类的newInstance方法，获取服务接口的代理类
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
     }
 

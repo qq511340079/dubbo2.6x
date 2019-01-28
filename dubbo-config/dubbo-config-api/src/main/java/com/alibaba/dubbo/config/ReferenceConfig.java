@@ -358,7 +358,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         //attributes are stored by system context.存储attributes到系统上下文
         StaticContext.getSystemContext().putAll(attributes);
-        //创建代理类
+        //创建服务接口的代理类，将RPC调用操作透明化
         ref = createProxy(map);
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
         ApplicationModel.initConsumerModel(getUniqueServiceName(), consumerModel);
@@ -474,7 +474,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (logger.isInfoEnabled()) {
             logger.info("Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
         }
-        // create service proxy
+        // create service proxy.
+        // invoker负责RPC调用，为invoker创建代理，使PRC调用操作透明，就像本地调用一样
         return (T) proxyFactory.getProxy(invoker);
     }
 
