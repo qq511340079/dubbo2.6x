@@ -96,12 +96,13 @@ public abstract class Wrapper {
      * @return Wrapper instance(not null).
      */
     public static Wrapper getWrapper(Class<?> c) {
+        //com.alibaba.dubbo.common.bytecode.ClassGenerator.DC接口的实现类不能生成wrapper
         while (ClassGenerator.isDynamicClass(c)) // can not wrapper on dynamic class.
             c = c.getSuperclass();
 
         if (c == Object.class)
             return OBJECT_WRAPPER;
-
+        //尝试从缓存中获取wrapper实例，不存在则创建
         Wrapper ret = WRAPPER_MAP.get(c);
         if (ret == null) {
             ret = makeWrapper(c);
@@ -160,17 +161,22 @@ public abstract class Wrapper {
                 continue;
 
             String mn = m.getName();
+            //生成invokeMethod方法中的代码，判断调用的方法并执行
+            //if( "sayHello".equals( $2 )
             c3.append(" if( \"").append(mn).append("\".equals( $2 ) ");
             int len = m.getParameterTypes().length;
+            //&&  $3.length == 1
             c3.append(" && ").append(" $3.length == ").append(len);
 
             boolean override = false;
+            //寻找是否有重载的方法
             for (Method m2 : methods) {
                 if (m != m2 && m.getName().equals(m2.getName())) {
                     override = true;
                     break;
                 }
             }
+            //如果有重载的方法，则再加上方法参数的判断语句
             if (override) {
                 if (len > 0) {
                     for (int l = 0; l < len; l++) {
@@ -181,7 +187,7 @@ public abstract class Wrapper {
             }
 
             c3.append(" ) { ");
-
+            //如果方法有返回值则生成return语句
             if (m.getReturnType() == Void.TYPE)
                 c3.append(" w.").append(mn).append('(').append(args(m.getParameterTypes(), "$4")).append(");").append(" return null;");
             else
@@ -190,6 +196,7 @@ public abstract class Wrapper {
             c3.append(" }");
 
             mns.add(mn);
+            //将本类中的方法(非父类中的方法)放入dmns
             if (m.getDeclaringClass() == c)
                 dmns.add(mn);
             ms.put(ReflectUtils.getDesc(m), m);
@@ -203,6 +210,7 @@ public abstract class Wrapper {
         c3.append(" throw new " + NoSuchMethodException.class.getName() + "(\"Not found method \\\"\"+$2+\"\\\" in class " + c.getName() + ".\"); }");
 
         // deal with get/set method.
+        //处理get/set方法，缓存到pts变量中，生成setPropertyValue/getPropertyValue方法中的代码
         Matcher matcher;
         for (Map.Entry<String, Method> entry : ms.entrySet()) {
             String md = entry.getKey();
@@ -225,20 +233,22 @@ public abstract class Wrapper {
         c1.append(" throw new " + NoSuchPropertyException.class.getName() + "(\"Not found property \\\"\"+$2+\"\\\" filed or setter method in class " + c.getName() + ".\"); }");
         c2.append(" throw new " + NoSuchPropertyException.class.getName() + "(\"Not found property \\\"\"+$2+\"\\\" filed or setter method in class " + c.getName() + ".\"); }");
 
-        // make class
+        // 接下来生成Class
         long id = WRAPPER_CLASS_COUNTER.getAndIncrement();
         ClassGenerator cc = ClassGenerator.newInstance(cl);
         cc.setClassName((Modifier.isPublic(c.getModifiers()) ? Wrapper.class.getName() : c.getName() + "$sw") + id);
         cc.setSuperClass(Wrapper.class);
 
         cc.addDefaultConstructor();
+        //添加字段
         cc.addField("public static String[] pns;"); // property name array.
         cc.addField("public static " + Map.class.getName() + " pts;"); // property type map.
         cc.addField("public static String[] mns;"); // all method name array.
         cc.addField("public static String[] dmns;"); // declared method name array.
+        //添加方法的参数类型字段
         for (int i = 0, len = ms.size(); i < len; i++)
             cc.addField("public static Class[] mts" + i + ";");
-
+        //添加方法
         cc.addMethod("public String[] getPropertyNames(){ return pns; }");
         cc.addMethod("public boolean hasProperty(String n){ return pts.containsKey($1); }");
         cc.addMethod("public Class getPropertyType(String n){ return (Class)pts.get($1); }");
@@ -249,8 +259,9 @@ public abstract class Wrapper {
         cc.addMethod(c3.toString());
 
         try {
+            //生成Class
             Class<?> wc = cc.toClass();
-            // setup static field.
+            // 为静态字段赋值
             wc.getField("pts").set(null, pts);
             wc.getField("pns").set(null, pts.keySet().toArray(new String[0]));
             wc.getField("mns").set(null, mns.toArray(new String[0]));
@@ -258,6 +269,7 @@ public abstract class Wrapper {
             int ix = 0;
             for (Method m : ms.values())
                 wc.getField("mts" + ix++).set(null, m.getParameterTypes());
+            //创建实例
             return (Wrapper) wc.newInstance();
         } catch (RuntimeException e) {
             throw e;
