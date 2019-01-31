@@ -24,13 +24,16 @@ import java.util.Map;
 
 /**
  * ClusterUtils
- *
  */
 public class ClusterUtils {
 
     private ClusterUtils() {
     }
 
+    /**
+     * 合并url，移除服务提供者的一些配置（这些配置来源于用户配置的url属性），
+     * 比如线程池相关配置。并保留服务提供者的部分配置，比如版本，group，时间戳等
+     */
     public static URL mergeUrl(URL remoteUrl, Map<String, String> localMap) {
         Map<String, String> map = new HashMap<String, String>();
         Map<String, String> remoteMap = remoteUrl.getParameters();

@@ -68,6 +68,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     private static final ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class).getAdaptiveExtension();
     private final String serviceKey; // Initialization at construction time, assertion not null
     private final Class<T> serviceType; // Initialization at construction time, assertion not null
+    //消费端参数
     private final Map<String, String> queryMap; // Initialization at construction time, assertion not null
     private final URL directoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
     private final String[] serviceMethods;
@@ -263,6 +264,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 return;
             }
             this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
+            //刷新缓存
             this.urlInvokerMap = newUrlInvokerMap;
             try {
                 destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker
@@ -344,10 +346,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         if (urls == null || urls.isEmpty()) {
             return newUrlInvokerMap;
         }
+        //用来记录已经生成invoker了的url
         Set<String> keys = new HashSet<String>();
+        //从消费端参数中获取protocol参数
         String queryProtocols = this.queryMap.get(Constants.PROTOCOL_KEY);
         for (URL providerUrl : urls) {
             // If protocol is configured at the reference side, only the matching protocol is selected
+            //只调用指定协议的服务提供方，其它协议忽略。
             if (queryProtocols != null && queryProtocols.length() > 0) {
                 boolean accept = false;
                 String[] acceptProtocols = queryProtocols.split(",");
@@ -361,14 +366,17 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                     continue;
                 }
             }
+            //忽略empty协议头
             if (Constants.EMPTY_PROTOCOL.equals(providerUrl.getProtocol())) {
                 continue;
             }
+            //跳过当前系统不支持的协议
             if (!ExtensionLoader.getExtensionLoader(Protocol.class).hasExtension(providerUrl.getProtocol())) {
                 logger.error(new IllegalStateException("Unsupported protocol " + providerUrl.getProtocol() + " in notified url: " + providerUrl + " from registry " + getUrl().getAddress() + " to consumer " + NetUtils.getLocalHost()
                         + ", supported protocol: " + ExtensionLoader.getExtensionLoader(Protocol.class).getSupportedExtensions()));
                 continue;
             }
+            //合并url
             URL url = mergeUrl(providerUrl);
 
             String key = url.toFullString(); // The parameter urls are sorted
@@ -377,16 +385,20 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             }
             keys.add(key);
             // Cache key is url that does not merge with consumer side parameters, regardless of how the consumer combines parameters, if the server url changes, then refer again
+            //尝试从urlInvokerMap缓存获取invoker，如果获取到就不用创建了invoker了
             Map<String, Invoker<T>> localUrlInvokerMap = this.urlInvokerMap; // local reference
             Invoker<T> invoker = localUrlInvokerMap == null ? null : localUrlInvokerMap.get(key);
+            //没有从缓存中获取到invoker
             if (invoker == null) { // Not in the cache, refer again
                 try {
                     boolean enabled = true;
+                    //判断服务端是否可用
                     if (url.hasParameter(Constants.DISABLED_KEY)) {
                         enabled = !url.getParameter(Constants.DISABLED_KEY, false);
                     } else {
                         enabled = url.getParameter(Constants.ENABLED_KEY, true);
                     }
+                    //如果服务端可用则创建invoker
                     if (enabled) {
                         invoker = new InvokerDelegate<T>(protocol.refer(serviceType, url), url, providerUrl);
                     }
@@ -394,6 +406,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                     logger.error("Failed to refer invoker for interface:" + serviceType + ",url:(" + url + ")" + t.getMessage(), t);
                 }
                 if (invoker != null) { // Put new invoker in cache
+                    //写缓存
                     newUrlInvokerMap.put(key, invoker);
                 }
             } else {
@@ -411,6 +424,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @return
      */
     private URL mergeUrl(URL providerUrl) {
+        // 合并url，移除服务提供者的一些配置（这些配置来源于用户配置的url属性），
+        // 比如线程池相关配置。并保留服务提供者的部分配置，比如版本，group，时间戳等
         providerUrl = ClusterUtils.mergeUrl(providerUrl, queryMap); // Merge the consumer side parameters
 
         List<Configurator> localConfigurators = this.configurators; // local reference
