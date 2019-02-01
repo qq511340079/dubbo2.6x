@@ -24,6 +24,7 @@ import com.alibaba.dubbo.rpc.RpcException;
 import java.util.List;
 
 /**
+ * 先来介绍一下服务路由是什么。服务路由包含一条路由规则，路由规则决定了服务消费者的调用目标，即规定了服务消费者可调用哪些服务提供者
  * Router. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Routing">Routing</a>
