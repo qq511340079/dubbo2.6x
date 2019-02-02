@@ -403,7 +403,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                             //设置url路径为接口全限定名
                             url = url.setPath(interfaceName);
                         }
-                        //url的协议为registry，表示是一个和注册中心的url
+                        //url的协议为registry，表示是一个注册中心的url
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                             //将map转为查询字符串，并作为refer参数的值添加到url中
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
