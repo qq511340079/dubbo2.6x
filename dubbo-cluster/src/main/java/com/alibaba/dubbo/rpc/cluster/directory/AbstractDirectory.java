@@ -76,6 +76,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         if (localRouters != null && !localRouters.isEmpty()) {
             for (Router router : localRouters) {
                 try {
+                    //路由的url中参数runtime为true则代表需要实时执行路由，即每次list方法都会调用route方法过滤服务提供者
                     if (router.getUrl() == null || router.getUrl().getParameter(Constants.RUNTIME_KEY, false)) {
                         invokers = router.route(invokers, getConsumerUrl(), invocation);
                     }

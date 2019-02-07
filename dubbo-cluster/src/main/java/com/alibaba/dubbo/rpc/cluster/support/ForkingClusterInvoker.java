@@ -39,7 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Invoke a specific number of invokers concurrently, usually used for demanding real-time operations, but need to waste more service resources.
  *
  * <a href="http://en.wikipedia.org/wiki/Fork_(topology)">Fork</a>
- *
+ * 通过线程池创建多个线程，并发调用多个服务提供者。只要有一个服务提供者成功返回了结果，doInvoke 方法就会立即结束运行
+ * 应用场景是在一些对实时性要求比较高的读操作（注意是读操作，并行写操作可能不安全）下使用，但这将会耗费更多的资源。
  */
 public class ForkingClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

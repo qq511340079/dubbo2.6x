@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * BroadcastClusterInvoker
- *
+ * 逐个调用每个服务提供者，如果其中一台报错，在循环调用结束后，BroadcastClusterInvoker 会抛出异常
  */
 public class BroadcastClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

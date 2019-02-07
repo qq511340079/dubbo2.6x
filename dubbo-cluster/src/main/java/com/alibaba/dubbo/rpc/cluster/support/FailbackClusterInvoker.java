@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  * Especially useful for services of notification.
  *
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
- *
+ * FailbackClusterInvoker 会在调用失败后，返回一个空结果给服务提供者。并通过定时任务对失败的调用进行重传，适合执行消息通知等操作。
  */
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 

@@ -96,6 +96,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     // Set<invokerUrls> cache invokeUrls to invokers mapping.
     private volatile Set<URL> cachedInvokerUrls; // The initial value is null and the midway may be assigned to null, please use the local variable reference
 
+    /**
+     * @param serviceType 服务接口类型
+     * @param url         注册中心url
+     */
     public RegistryDirectory(Class<T> serviceType, URL url) {
         super(url);
         if (serviceType == null)

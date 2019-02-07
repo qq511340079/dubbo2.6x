@@ -383,7 +383,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             isJvmRefer = isInjvm().booleanValue();
         }
 
-        if (isJvmRefer) {//如果一个本地引用
+        if (isJvmRefer) {//如果是一个本地引用
             //生成本地引用URL，协议为injvm
             URL url = new URL(Constants.LOCAL_PROTOCOL, NetUtils.LOCALHOST, 0, interfaceClass.getName()).addParameters(map);
             //调用InjvmProtocol.refer方法获取InjvmInvoker实例
@@ -392,7 +392,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
         } else {//远程引用
-            //url不为空，可能是点对点或者注册中心的地址
+            //url不为空，可能是点对点或者注册中心的地址。这里也可以看出<dubbo:reference url=""/>标签中的url属性优先于注册中心
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
                 //;号分割的多个url地址
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
@@ -433,15 +433,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
-            if (urls.size() == 1) {//单个注册中心或服务提供者(服务直联，下同)
+            if (urls.size() == 1) {//单个注册中心或服务提供者(直连)
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
-            } else {//多个注册中心或多个服务提供者，或者两者混合
+            } else {//多个注册中心或多个服务提供者(直连)，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 //获取所有invoker
                 for (URL url : urls) {
                     invokers.add(refprotocol.refer(interfaceClass, url));
                     if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+                        //使用最后一个注册中心的url赋值给registryURL变量
                         registryURL = url; // use last registry url
                     }
                 }

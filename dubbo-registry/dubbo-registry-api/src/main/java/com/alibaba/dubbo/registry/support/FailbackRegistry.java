@@ -195,6 +195,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
+        //调用父类方法，将listener放入缓存
         super.subscribe(url, listener);
         removeFailedSubscribed(url, listener);
         try {

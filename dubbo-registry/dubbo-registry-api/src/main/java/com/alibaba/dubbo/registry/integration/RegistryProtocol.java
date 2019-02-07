@@ -315,15 +315,21 @@ public class RegistryProtocol implements Protocol {
         return ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("mergeable");
     }
 
+    /**
+     * @param cluster 自适应实例
+     * @param registry 注册中心实例
+     * @param type 服务接口Class
+     * @param url 注册中心url
+     * */
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
         //protocol是在创建实例的时候由dubbo的SPI机制注入自适应实例
         directory.setProtocol(protocol);
         // all attributes of REFER_KEY
-        //Constants.REFER_KEY的所有参数
+        //获取消费端参数
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
-        //构建消费端url
+        //构建消费端url，表示注册到注册中心的消费端信息
         URL subscribeUrl = new URL(Constants.CONSUMER_PROTOCOL, parameters.remove(Constants.REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (!Constants.ANY_VALUE.equals(url.getServiceInterface())
                 && url.getParameter(Constants.REGISTER_KEY, true)) {
