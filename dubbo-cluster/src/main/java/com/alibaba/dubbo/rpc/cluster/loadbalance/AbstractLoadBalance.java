@@ -26,11 +26,20 @@ import java.util.List;
 
 /**
  * AbstractLoadBalance
- *
  */
 public abstract class AbstractLoadBalance implements LoadBalance {
 
+    /**
+     * 计算服务预热阶段的权重，缺省预热阶段为10分钟。
+     * 该过程主要用于保证当服务运行时长小于服务预热时间时，对服务进行降权，避免让服务在启动之初就处于高负载状态.
+     * 服务预热是一个优化手段，与此类似的还有 JVM 预热。主要目的是让服务启动后“低功率”运行一段时间，使其效率慢慢提升至最佳状态。
+     *
+     * @param uptime 服务运行时间
+     * @param warmup 预热时间
+     * @param weight 配置的权重
+     */
     static int calculateWarmupWeight(int uptime, int warmup, int weight) {
+        //当服务运行时间uptime增大，权重会越来越接近配置的权重weight
         int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
         return ww < 1 ? 1 : (ww > weight ? weight : ww);
     }

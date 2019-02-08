@@ -26,7 +26,7 @@ import java.util.Random;
 
 /**
  * LeastActiveLoadBalance
- *
+ * 加权最小活跃数负载均衡，在多个服务提供者最小活跃数相同的情况下会按权重随机分配，如果权重相同则直接随机分配
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
 
@@ -37,27 +37,43 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
         int length = invokers.size(); // Number of invokers
-        int leastActive = -1; // The least active value of all invokers
-        int leastCount = 0; // The number of invokers having the same least active value (leastActive)
-        int[] leastIndexs = new int[length]; // The index of invokers having the same least active value (leastActive)
-        int totalWeight = 0; // The sum of with warmup weights
-        int firstWeight = 0; // Initial value, used for comparision
-        boolean sameWeight = true; // Every invoker has the same weight value?
+        //记录最小活跃数
+        int leastActive = -1;
+        //具有相同最小活跃数的invoker数量
+        int leastCount = 0;
+        //记录具有相同最小活跃数的invoker的索引
+        int[] leastIndexs = new int[length];
+        //最小活跃数相同的invoker的总权重
+        int totalWeight = 0;
+        // 第一个最小活跃数的 Invoker 权重值，用于与其他具有相同最小活跃数的 Invoker 的权重进行对比，
+        // 以检测是否“所有具有相同最小活跃数的 Invoker 的权重”均相等
+        int firstWeight = 0;
+        //具有相同最小活跃数的invoker的权重是否都一样
+        boolean sameWeight = true;
         for (int i = 0; i < length; i++) {
             Invoker<T> invoker = invokers.get(i);
+            //获取服务提供者的活跃数
             int active = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName()).getActive(); // Active number
+            //获取权重
             int afterWarmup = getWeight(invoker, invocation); // Weight
+            //如果leastActive == -1说明是第一次进入循环，而active < leastActive说明当前服务提供者的活跃数更小，这两种情况需要重新进行赋值操作
             if (leastActive == -1 || active < leastActive) { // Restart, when find a invoker having smaller least active value.
+                // 使用当前活跃数 active 更新最小活跃数 leastActive
                 leastActive = active; // Record the current least active value
+                //更新leastCount为1
                 leastCount = 1; // Reset leastCount, count again based on current leastCount
-                leastIndexs[0] = i; // Reset
+                //记录下标值
+                leastIndexs[0] = i;
                 totalWeight = afterWarmup; // Reset
                 firstWeight = afterWarmup; // Record the weight the first invoker
                 sameWeight = true; // Reset, every invoker has the same weight value?
-            } else if (active == leastActive) { // If current invoker's active value equals with leaseActive, then accumulating.
+            } else if (active == leastActive) { //如果当前invoker的活跃数等于leastActive，则说明具有多个相同最小活跃数的invoker，则进行相关计算
+                // 在 leastIndexs 中记录下当前 Invoker 在 invokers 集合中的下标
                 leastIndexs[leastCount++] = i; // Record index number of this invoker
+                //累加权重
                 totalWeight += afterWarmup; // Add this invoker's weight to totalWeight.
-                // If every invoker has the same weight?
+                // 检测当前 Invoker 的权重与 firstWeight 是否相等，
+                // 不相等则将 sameWeight 置为 false
                 if (sameWeight && i > 0
                         && afterWarmup != firstWeight) {
                     sameWeight = false;
