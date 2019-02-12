@@ -154,6 +154,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
             } else {
                 client.close(timeout);
             }
+            //client已经关闭，创建LazyConnectExchangeClient并赋值给client，这是一种防御性操作，以避免客户端意外关闭，客户端的初始状态为false
             client = replaceWithLazyClient();
         }
     }
@@ -166,6 +167,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
     // ghost client
     private LazyConnectExchangeClient replaceWithLazyClient() {
         // this is a defensive operation to avoid client is closed by accident, the initial state of the client is false
+        //这是一种防御性操作，以避免客户端意外关闭，客户端的初始状态为false
         URL lazyUrl = url.addParameter(Constants.LAZY_CONNECT_INITIAL_STATE_KEY, Boolean.FALSE)
                 .addParameter(Constants.RECONNECT_KEY, Boolean.FALSE)
                 .addParameter(Constants.SEND_RECONNECT_KEY, Boolean.TRUE.toString())
@@ -175,6 +177,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
         String key = url.getAddress();
         // in worst case there's only one ghost connection.
+        //在最坏的情况下，只有一个ghost connection.
         LazyConnectExchangeClient gclient = ghostClientMap.get(key);
         if (gclient == null || gclient.isClosed()) {
             gclient = new LazyConnectExchangeClient(lazyUrl, client.getExchangeHandler());

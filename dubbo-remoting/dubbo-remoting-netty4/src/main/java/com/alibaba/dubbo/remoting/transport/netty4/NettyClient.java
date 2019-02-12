@@ -153,6 +153,9 @@ public class NettyClient extends AbstractClient {
         //nioEventLoopGroup.shutdownGracefully();
     }
 
+    /**
+     * 将io.netty.channel.Channel转换为com.alibaba.dubbo.remoting.transport.netty4.NettyChannel
+     * */
     @Override
     protected com.alibaba.dubbo.remoting.Channel getChannel() {
         Channel c = channel;
