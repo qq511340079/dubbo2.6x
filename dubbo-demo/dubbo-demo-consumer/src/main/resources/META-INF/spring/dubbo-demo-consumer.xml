@@ -30,6 +30,5 @@
 
     <!-- generate proxy for the remote service, then demoService can be used in the same way as the
     local regular interface -->
-    <dubbo:consumer client="netty4"></dubbo:consumer>
     <dubbo:reference id="demoService" interface="com.alibaba.dubbo.demo.DemoService" />
 </beans>
