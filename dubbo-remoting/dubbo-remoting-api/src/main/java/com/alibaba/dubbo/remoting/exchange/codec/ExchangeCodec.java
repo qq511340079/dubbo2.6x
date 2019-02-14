@@ -104,7 +104,7 @@ public class ExchangeCodec extends TelnetCodec {
             }
             return super.decode(channel, buffer, readable, header);
         }
-        // check length.
+        // 避免半包问题，检查数据包中的header是否已经接收完全
         if (readable < HEADER_LENGTH) {
             return DecodeResult.NEED_MORE_INPUT;
         }
@@ -112,8 +112,9 @@ public class ExchangeCodec extends TelnetCodec {
         // get data length.
         int len = Bytes.bytes2int(header, 12);
         checkPayload(channel, len);
-
+        //根据数据包的header+body的长度计算出完整数据包的长度
         int tt = len + HEADER_LENGTH;
+        //避免半包问题，检查已接收的数据包长度是否小于tt，小于则说明接收到的数据还不是一个完整的数据包，则返回，继续接收。
         if (readable < tt) {
             return DecodeResult.NEED_MORE_INPUT;
         }
