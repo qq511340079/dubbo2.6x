@@ -358,6 +358,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         //attributes are stored by system context.存储attributes到系统上下文
         StaticContext.getSystemContext().putAll(attributes);
+
+        //分割线以上主要是从dubbo支持的各种方式中(比如<dubbo:reference/>标签、运行参数、properties文件等)获取配置信息存入map
+        /* ------------------------------------------ 分割线 ------------------------------------------ */
         //创建服务接口的代理类，将RPC调用操作透明化
         ref = createProxy(map);
         ConsumerModel consumerModel = new ConsumerModel(getUniqueServiceName(), this, ref, interfaceClass.getMethods());
@@ -432,7 +435,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     throw new IllegalStateException("No such any registry to reference " + interfaceName + " on the consumer " + NetUtils.getLocalHost() + " use dubbo version " + Version.getVersion() + ", please config <dubbo:registry address=\"...\" /> to your spring config.");
                 }
             }
-
+            //分割线以上代码：1.判断是否是本地引用，是则创建本地引用的invoker。 2.如果不是本地引用则获取注册中心或者是直连服务的com.alibaba.dubbo.common.URL实例
+            /* ------------------------------------------ 分割线 ------------------------------------------ */
+            //为远程引用创建invoker
             if (urls.size() == 1) {//单个注册中心或服务提供者(直连)
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {//多个注册中心或多个服务提供者(直连)，或者两者混合
@@ -446,7 +451,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         registryURL = url; // use last registry url
                     }
                 }
-
+                //多个注册中心或注册中心与直连混合的情况
                 if (registryURL != null) { // registry url is available
                     // use AvailableCluster only when register's cluster is available
                     //如果注册中心不为null，则将使用AvailableCluster
