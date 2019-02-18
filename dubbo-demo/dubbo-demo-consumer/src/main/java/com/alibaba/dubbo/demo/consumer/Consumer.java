@@ -17,10 +17,13 @@
 package com.alibaba.dubbo.demo.consumer;
 
 import com.alibaba.dubbo.demo.DemoService;
-import com.alibaba.dubbo.rpc.service.EchoService;
+import com.alibaba.dubbo.rpc.Invoker;
+import com.alibaba.dubbo.rpc.Result;
+import com.alibaba.dubbo.rpc.RpcInvocation;
+import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.util.Arrays;
+import java.lang.reflect.Field;
 
 public class Consumer {
 
@@ -31,6 +34,26 @@ public class Consumer {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-consumer.xml"});
         context.start();
         DemoService demoService = (DemoService) context.getBean("demoService"); // get remote service proxy
+
+
+       /*
+       //直接使用invoker调用服务提供者
+       try {
+            Field handler = demoService.getClass().getDeclaredField("handler");
+            handler.setAccessible(true);
+            InvokerInvocationHandler invokerInvocationHandler = (InvokerInvocationHandler) handler.get(demoService);
+            Field invokerField = invokerInvocationHandler.getClass().getDeclaredField("invoker");
+            invokerField.setAccessible(true);
+            Invoker invoker1 = (Invoker) invokerField.get(invokerInvocationHandler);
+
+            //使用invoker调用服务提供者
+            Result result = invoker1.invoke(new RpcInvocation(DemoService.class.getMethod("sayHello", String.class), new String[]{"world"}));
+            Object value = result.recreate();
+            System.out.println("使用invoker调用服务提供者结果=" + value);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }*/
+
         while (true) {
             try {
                 Thread.sleep(1000);
