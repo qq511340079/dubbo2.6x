@@ -80,7 +80,9 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
     @Override
     public boolean isAvailable() {
+        //粘滞连接
         Invoker<T> invoker = stickyInvoker;
+        //如果配置了粘滞连接，则直接检查粘滞连接的可用性
         if (invoker != null) {
             return invoker.isAvailable();
         }
