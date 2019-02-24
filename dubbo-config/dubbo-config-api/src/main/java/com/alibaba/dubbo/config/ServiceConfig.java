@@ -516,7 +516,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (!Constants.SCOPE_NONE.toString().equalsIgnoreCase(scope)) {
 
             // export to local if the config is not remote (export to remote only when config is remote)
-            //如果配scope != remote，则导出服务到本地
+            //如果配置的scope != remote，则导出服务到本地
             if (!Constants.SCOPE_REMOTE.toString().equalsIgnoreCase(scope)) {
                 exportLocal(url);
             }
@@ -620,6 +620,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 } catch (UnknownHostException e) {
                     logger.warn(e.getMessage(), e);
                 }
+                //如果获取的是无效的ip，则尝试通过socket连接到注册中心，然后再通过socket获取本地的ip地址
                 if (isInvalidLocalHost(hostToBind)) {
                     if (registryURLs != null && !registryURLs.isEmpty()) {
                         for (URL registryURL : registryURLs) {

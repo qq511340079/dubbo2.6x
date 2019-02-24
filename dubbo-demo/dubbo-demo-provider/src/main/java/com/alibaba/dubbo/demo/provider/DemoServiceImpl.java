@@ -22,9 +22,7 @@ import com.alibaba.dubbo.demo.TestException;
 
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class DemoServiceImpl implements DemoService {
 
@@ -32,28 +30,9 @@ public class DemoServiceImpl implements DemoService {
 
     @Override
     public String sayHello(String name) {
-        if (true) {
-            throw new TestException();
-        }
         System.out.println("[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
         return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
         //System.out.println("[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
         //return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
     }
-
-    public static Object test() {
-        return new RuntimeException("嘻嘻");
-    }
-
-
-    public static void main(String[] args) {
-        try {
-            Object test = DemoServiceImpl.test();
-        } catch (Exception e) {
-            System.out.println(123);
-            System.out.println(e);
-        }
-
-    }
-
 }
