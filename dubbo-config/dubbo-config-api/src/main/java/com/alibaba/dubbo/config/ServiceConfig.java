@@ -547,6 +547,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         }
                         //生成invoker。registryURL.addParameterAndEncoded方法，把服务提供者的配置信息字符串放到了registryURL的parameter中，后面暴露服务到本地时会用到
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        //创建DelegateProviderMetaDataInvoker，封装了服务提供者的invoker和元信息
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
                         //通过自适应拓展实例，调用具体protocol拓展实例的export，此处调用的是RegistryProtocol.export方法
                         Exporter<?> exporter = protocol.export(wrapperInvoker);

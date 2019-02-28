@@ -53,7 +53,6 @@ public class Consumer {
         } catch (Throwable e) {
             e.printStackTrace();
         }*/
-
         while (true) {
             try {
                 Thread.sleep(1000);
