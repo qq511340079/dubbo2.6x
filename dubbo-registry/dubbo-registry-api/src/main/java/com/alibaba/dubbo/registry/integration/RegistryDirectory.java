@@ -596,7 +596,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         if (oldUrlInvokerMap != null) {
             //获取新的invoker集合
             Collection<Invoker<T>> newInvokers = newUrlInvokerMap.values();
-            //遍历旧的invoker就和
+            //遍历旧的invoker
             for (Map.Entry<String, Invoker<T>> entry : oldUrlInvokerMap.entrySet()) {
                 // 检测 newInvokers 中是否包含老的 Invoker
                 if (!newInvokers.contains(entry.getValue())) {
