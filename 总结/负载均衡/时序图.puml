@@ -1,0 +1,21 @@
+@startuml
+InvokerInvocationHandler -> AbstractClusterInvoker: invoke(Invocation)
+activate InvokerInvocationHandler
+activate AbstractClusterInvoker
+AbstractClusterInvoker -> AbstractClusterInvoker: list(Invocation)
+activate AbstractClusterInvoker #FFBBBB
+AbstractClusterInvoker -> AbstractDirectory: list(Invocation)
+activate AbstractDirectory
+AbstractDirectory -> RegistryDirectory: doList(Invocation)
+activate RegistryDirectory
+RegistryDirectory --> AbstractDirectory: List<Invoker>
+deactivate RegistryDirectory
+AbstractDirectory --> AbstractClusterInvoker: List<Invoker>
+deactivate AbstractClusterInvoker #FFBBBB
+deactivate AbstractDirectory
+AbstractClusterInvoker -> FailoverClusterInvoker: doInvoker(Invocation, List<Invoker>, LoadBalance)
+activate FailoverClusterInvoker
+deactivate FailoverClusterInvoker
+deactivate AbstractClusterInvoker
+deactivate  InvokerInvocationHandler
+@enduml
