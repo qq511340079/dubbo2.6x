@@ -15,7 +15,21 @@ deactivate AbstractClusterInvoker #FFBBBB
 deactivate AbstractDirectory
 AbstractClusterInvoker -> FailoverClusterInvoker: doInvoker(Invocation, List<Invoker>, LoadBalance)
 activate FailoverClusterInvoker
-deactivate FailoverClusterInvoker
+FailoverClusterInvoker -> AbstractClusterInvoker: select(LoadBalance, Invocation, List<Invoker>, List<Invoker>)
+AbstractClusterInvoker -> AbstractClusterInvoker: doSelect(LoadBalance, Invocation, List<Invoker>, List<Invoker>)
+activate AbstractClusterInvoker #FFBBBB
+AbstractClusterInvoker -> AbstractLoadBalance: select(List<Invoker>, URL, Invocation)
+activate AbstractLoadBalance
+AbstractLoadBalance -> RoundRobinLoadBalance: doSelect(List<Invoker>, URL, Invocation)
+activate RoundRobinLoadBalance
+RoundRobinLoadBalance --> AbstractLoadBalance: Invoker
+deactivate RoundRobinLoadBalance
+AbstractLoadBalance --> AbstractClusterInvoker: Invoker
+deactivate AbstractLoadBalance
+deactivate AbstractClusterInvoker #FFBBBB
+AbstractClusterInvoker --> FailoverClusterInvoker: Invoker
+FailoverClusterInvoker --> FailoverClusterInvoker: Invoker.invoke(Invocation)
+deactivate AbstractLoadBalance
 deactivate AbstractClusterInvoker
-deactivate  InvokerInvocationHandler
+deactivate InvokerInvocationHandler
 @enduml
